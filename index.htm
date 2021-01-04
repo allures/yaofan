@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>施舍像逛某宝一样简单</title>
+    <link rel="stylesheet" href="app/layui/css/layui.css" />
+    <link rel="stylesheet" href="app/layui/css/global.css" />
+    <script src="app/layui/layui.js"></script> 
+</head>
+<body class="fly-full">
+
+    <div class="fly-header layui-bg-black">
+        <div class="layui-container">
+            <a class="fly-logo" href="./">
+                <h1>让天下没有难要的饭！</h1>
+            </a>             
+        </div>
+    </div>    
+<div class="fly-home fly-panel">
+    <h2>施舍像逛某宝一样简单</h2>   
+	<p style="padding: 10px 0; color: #5FB878;">花言巧语搞欺骗，不如伸手去要饭！</p>
+    <img style="width:120px;" src="./app/layui/images/ss.jpg" />
+    <div class="fly-sns" id="payclick">
+        <div class="layui-input-inline">            
+            <input type="text" id="price" name="price" placeholder="￥金额" autocomplete="off" class="layui-input">
+        </div>
+        <div class="layui-input-inline">           
+             <button class="layui-btn layui-btn-normal fly-pay">支付宝施舍</button>
+        </div>   
+		
+		<div id="qrcode" class="fly-sns"></div>
+		<a href="#" id="payurl" style="display:none">打开支付宝支付</a>
+    </div>
+</div>
+
+<div class="layui-container">
+    <div class="layui-row">
+        <div class="fly-home-jie">
+            <div class="fly-panel">
+
+                <div class="fly-panel-title fly-filter">
+                    <a href="./" class="layui-this">最新施舍记录</a>
+                </div>
+
+                <ul class="fly-list">
+                            <li>暂无记录</li>
+                            
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div style="text-align: center;">
+        <div id="page" class="pagination-container"> </div>
+    </div>
+</div>
+<script>
+var c = '';
+var i = 0;
+var u = navigator.userAgent;
+var isPC = !u.match(/Android|iPhone|SymbianOS|Windows Phone|iPad|iPod/); //ios终端
+var isQQ = u.indexOf('QBWebView') > -1;
+layui.use(['layer'], function () {  
+        var $ = layui.jquery, layer = layui.layer;
+         initLayPage();
+        //触发事件
+        $('#payclick .fly-pay').on('click', function () { 
+                var price = $("#price").val();  
+                if (price === "" || price == null) {
+                    layer.msg('请施主填入金额啊!')
+                    return;
+                }
+                if (isNaN(price)) {
+                    layer.msg('请施主填入正确的金额哦!')
+                    return;
+
+                };
+                if (price < 0.01) {
+                    layer.msg('请施,您这金额我有点不懂!')
+                    return;
+                } 
+
+			$(this).attr('disabled','disabled');
+	        $(this).addClass(' layui-btn-disabled');
+	        $(this).text('正在施舍...');
+	        window.clearInterval(c);
+	        var m = '';	         
+	        getpayqr(m,price);                   
+ 
+        });
+ 
+
+		function initLayPage(pageConf) {
+	//var $ = layui.jquery;
+    if (!pageConf) {
+        pageConf = {};
+        pageConf.pageSize = 20;
+        pageConf.currentPage = 1;
+
+    }
+	var loading = layer.load();
+    $.get("app/pay.php?c=list&p="+pageConf.currentPage, function (res) {
+        layui.use(['laypage', 'layer'], function () {
+            var page = layui.laypage;
+            page.render({
+                elem: 'page',
+                count: res.total,
+                curr: pageConf.currentPage,
+                limit: pageConf.pageSize,
+                theme: '#1E9FFF',
+                jump: function (obj, first) {
+                    if (!first) {
+                        pageConf.currentPage = obj.curr;
+                        pageConf.pageSize = obj.limit;
+                        initLayPage(pageConf);
+                    }
+                }
+            });        
+			
+        })		 
+		$('.fly-list').html(res.html);
+		layer.close(loading);
+    },'json');
+}
+
+function getpayqr(m,n){
+var loading = layer.load();
+	$.ajax({
+                url: "app/pay.php?c=order&m="+m+"&n="+n,
+                type: "GET",
+				dataType: "json",
+                //data:{sid:sessionId},
+                success: function (data) {
+					layer.close(loading);
+                	if(data.status=="200"){ 
+						if(data.new=="0"){
+							//有旧订单
+ layer.confirm('您上一个施舍尚未支付？', {
+  btn: ['施舍旧的','施舍新的'] //按钮
+}, function(index){
+	layer.close(index);     
+}, function(){
+	$('#qrcode').html('');
+    getpayqr('new',n);
+	return;
+});
+
+						  
+						}
+						var surl = 'alipayqr://platformapi/startapp?saId=10000007&qrcode='+encodeURIComponent(data.url)					 
+						if(isQQ){
+						  $('#payurl').attr("href",surl);
+						  $('#payurl').click();
+						}else{
+							if(isPC){
+								$('#qrcode').html('<img src="'+data.qr+'" style="width:140px;" /><br />支付宝扫码支付'); 
+							}else{
+						        window.location.href = surl;
+							}
+						}
+						 checkpay(data.oid);
+						 c = setInterval(function(){checkpay(data.oid)},4000);						
+                	}else{
+                		if(data.status=="400"){
+                			getpayqr(m,n);
+                		}else{
+                	       layer.msg(data.message);
+                		}
+                	}
+                }
+ });
+}
+function checkpay(oId){    	
+    	//var sessionId = "'.$session_id.'";
+    	if(oId!=""){
+    		$.ajax({
+                url: "app/pay.php?c=polling",
+                type: "GET",
+				dataType: "json",
+                data:{oid:oId},
+                success: function (data) {
+                	if(data.status=="200"){
+                		window.clearInterval(c);                		 
+						layer.msg(data.message);
+						$('#price').val('');
+						$('#qrcode').html('');
+						$('.fly-pay').attr('disabled',false);
+	                    $('.fly-pay').removeClass(' layui-btn-disabled');
+	                    $('.fly-pay').text('支付宝施舍');
+						initLayPage(); 
+                	}else{
+                		i++;
+						//console.log(i)
+                		if(i>40){
+                			window.clearInterval(c);
+                			 layer.msg("长时间未检测到支付...");
+							//$('.qrcode-error').fadeIn();
+							//alert.hide();
+                		}
+                	}
+                }
+        	});
+    	}
+    }
+        
+});
+
+</script>
+<div class="fly-footer">
+        <p>
+            &copy; 2021 - 淘饭网
+             
+        </p>
+    </div>
+</body>
+</html>
