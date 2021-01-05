@@ -51,7 +51,7 @@ pre{padding: 10px 15px; margin: 10px 0; font-size: 12px; border-left: 6px solid 
 
 /* µ×²¿ */
 .fly-footer {margin: 50px 0 0; padding: 20px 0 30px; line-height: 30px; text-align: center; color: rgba(255,255,255,0.5); border-top: 1px solid #e2e2e2;background:#393D49;}
-.fly-footer a{padding:0 6px; font-weight: 300; color: #333;}
+.fly-footer a{padding:0 6px; font-weight: 300; color: rgba(255,255,255,0.5);}
 .fly-footer a:hover{color: #777;}
  
 
