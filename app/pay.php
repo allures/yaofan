@@ -113,7 +113,7 @@ if($result===true){
 	$user =  $_POST['buyer_logon_id'];
 	$db = new Db();
     $rs = $db->getline("select * from dmf_order where oid=:oid",array('oid'=>$oid));
-	if(!empty($rs) && $rs['oje'] = $oje  ){
+	if(!empty($rs) && $rs['oje'] == $oje  ){
 	   $db->runsql("update dmf_order set user=:user,ispay=1,ptime=:ptime,trade_no=:trade_no where oid=:oid",array('user'=>$user,'oid'=>$oid,'ptime'=>$ptime,'trade_no'=>$trade_no));
 	}    
    exit('success');
