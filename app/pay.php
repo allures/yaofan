@@ -93,7 +93,7 @@ if($result['code'] && $result['code']=='10000'){
 	 	unset($_SESSION[TOKEN.'_OID']);
         exit ('{"status":"400","message":"订单已过期"}');        
 	 }else{
-        exit ('{"status":"200","new":"0","url":"'.$result['qr_code'].'","qr":"'.url_qr($rs['pay_url']).'","oid":"'.$arr['oid'].'"}');
+        exit ('{"status":"200","new":"0","url":"'.$rs['pay_url'].'","qr":"'.url_qr($rs['pay_url']).'","oid":"'.$arr['oid'].'"}');
 	 }
    }
 }
